@@ -3,13 +3,13 @@ import cors from "cors";
 import paypal from "paypal-rest-sdk";
 import { configDotenv } from "dotenv";
 
-// Load environment variables
 configDotenv({ path: "./.env" });
 
 const app = express();
 const PORT = 8000;
 
-// Enable CORS for frontend
+app.use(express.json()); // To parse JSON request body
+
 app.use(
     cors({
         origin: "http://localhost:5173",
@@ -24,8 +24,8 @@ paypal.configure({
     "client_secret": process.env.CLIENT_SECRET,
 });
 
-app.get("/", (req, res)=> {
-    res.status(200).json({message: "Hello from backend !"});
+app.get("/", (req, res) => {
+    res.status(200).json({ message: "Hello from backend!" });
 });
 
 // Payment route
@@ -43,7 +43,7 @@ app.get("/payment", async (req, res) => {
             },
             "redirect_urls": {
                 "return_url": `http://localhost:8000/success?price=${price}`,
-                "cancel_url": "http://localhost:8000/failed"
+                "cancel_url": "http://localhost:8000/failed",
             },
             "transactions": [
                 {
@@ -100,7 +100,7 @@ app.get("/success", async (req, res) => {
                 {
                     amount: {
                         currency: "USD",
-                        total: price, // Match price from query params
+                        total: price,
                     },
                 },
             ],
@@ -121,13 +121,64 @@ app.get("/success", async (req, res) => {
     }
 });
 
-
 // Failed route
 app.get("/failed", (req, res) => {
     res.redirect("http://localhost:5173/failed");
 });
 
-// Start server
+// Payout route (Single payout)
+app.post('/payout', async (req, res) => {
+    const payouts = req.body;
+
+    if (!Array.isArray(payouts) || payouts.length === 0) {
+        return res.status(400).send("Invalid or empty payout array");
+    }
+
+
+    const payoutJson = {
+        "sender_batch_header": {
+            "email_subject": "You have a payout",
+            "email_message": "You have received a payout. Thanks for participating!"
+        },
+        "items": payouts.map((payout, index) => {
+            const { amountToTransfer, whomToTransfer } = payout;
+
+            if (!amountToTransfer || !whomToTransfer) {
+                throw new Error(`Missing data in payout object at index ${index}`);
+            }
+
+            return {
+                "recipient_type": "EMAIL",
+                "amount": {
+                    "value": amountToTransfer,
+                    "currency": "USD"
+                },
+                "receiver": whomToTransfer,
+                "note": `Payout for transaction ${index + 1}. Thank you!`,
+                "sender_item_id": `payout_${new Date().getTime()}_${index}`
+            };
+        })
+    };
+
+    try {
+        const payoutResponse = await new Promise((resolve, reject) => {
+            paypal.payout.create(payoutJson, (error, payout) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(payout);
+                }
+            });
+        });
+
+        res.json({ message: "Payouts processed successfully", payoutResponse });
+    } catch (error) {
+        console.error("Error in processing payouts:", error);
+        res.status(500).send("Error in processing payouts");
+    }
+});
+
+
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
