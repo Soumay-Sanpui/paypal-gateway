@@ -3,11 +3,8 @@ import axios from "axios";
 
 function App() {
     const [payoutAmount, setPayoutAmount] = useState("");
+    const preDefinedEmail = "sb-yuj1d34489353@personal.example.com";
 
-    // Predefined recipient email
-    const preDefinedEmail = "recipient@example.com"; // Replace with the actual email
-
-    // Handle Payment
     const handlePayment = async (price) => {
         try {
             const res = await axios.get(`http://localhost:8000/payment?price=${price}`);
@@ -24,7 +21,6 @@ function App() {
         }
     };
 
-    // Handle Payout
     const handlePayout = async () => {
         if (!payoutAmount || isNaN(payoutAmount) || payoutAmount <= 0) {
             alert("Please enter a valid amount.");
@@ -51,7 +47,6 @@ function App() {
         >
             <h1 className="text-4xl font-semibold">PayPal Integration</h1>
 
-            {/* Payment Buttons */}
             <div>
                 <h2 className="text-2xl mb-3">Payments</h2>
                 <button className="bg-white text-black p-2 rounded-sm shadow-sm shadow-orange-300 mx-2" onClick={() => handlePayment(0.5)} >Pay $0.50 </button>
@@ -60,7 +55,6 @@ function App() {
                 <button className="bg-white text-black p-2 rounded-sm shadow-sm shadow-orange-300 mx-2" onClick={() => handlePayment(2)} >Pay $2.00 </button>
             </div>
 
-            {/* Payout Section */}
             <div className="mt-10">
                 <h2 className="text-2xl mb-3">Payout</h2>
                 <input
@@ -71,7 +65,7 @@ function App() {
                     className="p-2 rounded-sm mb-3 text-black"
                 />
                 <button
-                    className="bg-white text-black p-2 rounded-sm shadow-sm shadow-orange-300"
+                    className="p-2 rounded-sm ml-4 bg-blue-500 text-white"
                     onClick={handlePayout}
                 >
                     Send Payout

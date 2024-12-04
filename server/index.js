@@ -17,7 +17,6 @@ app.use(
     })
 );
 
-// PayPal configuration
 paypal.configure({
     "mode": "sandbox", // Use 'sandbox' or 'live'
     "client_id": process.env.CLIENT_ID,
